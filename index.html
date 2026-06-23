@@ -62,7 +62,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:52px 2
 
 /* ── GAME SCREEN SHARED ── */
 .game-nav{display:flex;align-items:center;justify-content:space-between;padding:52px 22px 0;flex-shrink:0}
-.game-title-row{text-align:center;padding:32px 0 4px;flex-shrink:0}
+.game-title-row{text-align:center;padding:56px 0 4px;flex-shrink:0}
 .game-title{font-size:30px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.92);font-weight:500;line-height:1.1}
 .game-round{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(196,164,107,0.8);margin-top:7px;font-weight:400}
 .game-area{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0 16px}
@@ -91,20 +91,23 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:52px 2
 #mazeCanvas{border-radius:16px;touch-action:none;cursor:crosshair;display:block;max-width:320px;max-height:420px}
 .maze-status{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:10px}
 
-/* ── HUE MATCH ── */
-.hue-wrap{width:100%;max-width:320px}
-.hue-target-label{font-size:8px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:10px}
-.hue-target{width:100%;height:80px;border-radius:16px;margin-bottom:20px;border:1px solid rgba(255,255,255,0.1);transition:background .4s}
-.hue-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.hue-opt{height:68px;border-radius:14px;cursor:pointer;border:2px solid transparent;transition:all .2s;position:relative}
-.hue-opt:active{transform:scale(.95)}
-.hue-opt.correct{border-color:rgba(100,220,130,0.7);box-shadow:0 0 20px rgba(100,220,130,0.25)}
-.hue-opt.wrong{border-color:rgba(220,80,80,0.6);animation:shake .3s ease}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+/* ── HUE MATCH (DRAG & DROP) ── */
+.hue-wrap{width:100%;max-width:320px;display:flex;flex-direction:column;align-items:stretch}
+.hue-instruct{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:12px}
+.hue-target-bar{width:100%;height:72px;border-radius:16px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.08);transition:background .35s}
+.hue-arrow-hint{font-size:10px;color:rgba(196,164,107,0.45);text-align:center;letter-spacing:.12em;margin-bottom:8px}
+.hue-drop-zone{width:100%;height:72px;border-radius:16px;border:1.5px dashed rgba(196,164,107,0.3);display:flex;align-items:center;justify-content:center;transition:all .2s;margin-bottom:14px;position:relative;box-sizing:border-box}
+.hue-drop-zone.hover{border-color:rgba(196,164,107,0.75);background:rgba(196,164,107,0.06);transform:scale(1.01)}
+.hue-drop-zone.wrong{border-color:rgba(220,80,80,0.65);animation:shake .3s ease}
+.hue-drop-zone.correct-fill{border-style:solid;border-color:rgba(255,255,255,0.15)}
+.hue-drop-label{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:rgba(196,164,107,0.4)}
 .hue-score-row{display:flex;justify-content:center;gap:6px;margin-bottom:16px}
-.hue-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.15);transition:all .25s}
+.hue-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.15);transition:all .25s}
 .hue-dot.done{background:var(--gold);border-color:var(--gold)}
-.hue-round-label{font-size:10px;color:var(--muted);text-align:center;margin-bottom:14px;letter-spacing:.06em}
+.hue-swatches{display:flex;justify-content:center;gap:14px}
+.hue-swatch{width:60px;height:60px;border-radius:50%;cursor:grab;border:2px solid rgba(255,255,255,0.12);touch-action:none;transition:opacity .15s;box-shadow:0 4px 14px rgba(0,0,0,0.35);flex-shrink:0}
+.hue-drag-clone{position:fixed;width:60px;height:60px;border-radius:50%;pointer-events:none;z-index:999;border:2px solid rgba(255,255,255,0.3);box-shadow:0 10px 28px rgba(0,0,0,0.45);transform:scale(1.14);transition:none}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
 
 /* ── TOWER STACK ── */
 #stackCanvas{display:block;border-radius:16px;max-width:320px}
@@ -518,10 +521,13 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:52px 2
   <div class="game-area">
     <div class="hue-wrap">
       <div class="hue-score-row" id="hueScoreRow"></div>
-      <div class="hue-round-label" id="hueLabel">Match the colour above</div>
-      <div class="hue-target-label">Target</div>
-      <div class="hue-target" id="hueTarget"></div>
-      <div class="hue-options" id="hueOptions"></div>
+      <div class="hue-instruct">Match the colour</div>
+      <div class="hue-target-bar" id="hueTargetBar"></div>
+      <div class="hue-arrow-hint">↓ Drag the matching shade below</div>
+      <div class="hue-drop-zone" id="hueDropZone">
+        <span class="hue-drop-label" id="hueDropLabel">Drop here</span>
+      </div>
+      <div class="hue-swatches" id="hueSwatches"></div>
     </div>
   </div>
   <div class="game-bottom">
@@ -653,8 +659,8 @@ const FREE_THEMES = [
 
 const SOUNDS = [
   {id:'rain',  name:'Rain',  em:'🩶',type:'rain'},
-  {id:'wind',  name:'Wind',  em:'🍃',type:'wind'},
   {id:'ocean', name:'Ocean', em:'〰️',type:'ocean'},
+  {id:'birds', name:'Birds', em:'🕊',type:'birds'},
   {id:'fire',  name:'Fire',  em:'🕯',type:'fire'},
 ];
 
@@ -1032,67 +1038,156 @@ function playSound(type){
     audioNodes.master=masterGain;
 
     if(type==='rain'){
-      // Rain = two noise layers: high-freq hiss (rain on surface) + mid rumble
-      const src=makeNoise(ctx,3);
-      const hiss=ctx.createBiquadFilter();hiss.type='highpass';hiss.frequency.value=3500;
-      const mid=ctx.createBiquadFilter();mid.type='bandpass';mid.frequency.value=900;mid.Q.value=0.6;
-      const gH=ctx.createGain();gH.gain.value=0.55;
-      const gM=ctx.createGain();gM.gain.value=0.45;
-      src.connect(hiss);hiss.connect(gH);gH.connect(masterGain);
-      src.connect(mid);mid.connect(gM);gM.connect(masterGain);
-      src.start();audioNodes.src=src;
-
-    } else if(type==='wind'){
-      // Wind = bandpass noise with slow LFO creating gust swell
-      const src=makeNoise(ctx,4);
-      const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=500;bp.Q.value=0.4;
-      const ampEnv=ctx.createGain();ampEnv.gain.value=0.4;
-      // LFO for gusts
-      const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=0.12;
-      const lfoG=ctx.createGain();lfoG.gain.value=0.35;
-      lfo.connect(lfoG);lfoG.connect(ampEnv.gain);
-      src.connect(bp);bp.connect(ampEnv);ampEnv.connect(masterGain);
+      // Calm rain: three layered noise bands — gentle, continuous, no rumble
+      const src=makeNoise(ctx,5);
+      // Soft hiss layer (rain on leaves/glass)
+      const f1=ctx.createBiquadFilter();f1.type='bandpass';f1.frequency.value=4000;f1.Q.value=0.5;
+      const g1=ctx.createGain();g1.gain.value=0.4;
+      // Mid patter layer (drops hitting surface)
+      const f2=ctx.createBiquadFilter();f2.type='bandpass';f2.frequency.value=1400;f2.Q.value=0.4;
+      const g2=ctx.createGain();g2.gain.value=0.35;
+      // Very soft low layer for body
+      const f3=ctx.createBiquadFilter();f3.type='bandpass';f3.frequency.value=600;f3.Q.value=0.3;
+      const g3=ctx.createGain();g3.gain.value=0.15;
+      // Gentle slow amplitude wobble so it doesn't feel flat
+      const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=0.05;
+      const lfoG=ctx.createGain();lfoG.gain.value=0.06;
+      lfo.connect(lfoG);lfoG.connect(g1.gain);
+      src.connect(f1);f1.connect(g1);g1.connect(masterGain);
+      src.connect(f2);f2.connect(g2);g2.connect(masterGain);
+      src.connect(f3);f3.connect(g3);g3.connect(masterGain);
       src.start();lfo.start();
       audioNodes.src=src;audioNodes.lfo=lfo;
 
     } else if(type==='ocean'){
-      // Ocean = low-pass noise with slow wave LFO (surge rhythm)
-      const src=makeNoise(ctx,5);
-      const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=650;
-      const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=80;
-      const ampEnv=ctx.createGain();ampEnv.gain.value=0.5;
-      // Wave LFO ~0.1Hz (one wave every ~10s)
-      const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=0.1;
-      const lfoG=ctx.createGain();lfoG.gain.value=0.4;
-      lfo.connect(lfoG);lfoG.connect(ampEnv.gain);
-      src.connect(hp);hp.connect(lp);lp.connect(ampEnv);ampEnv.connect(masterGain);
-      src.start();lfo.start();
-      audioNodes.src=src;audioNodes.lfo=lfo;
+      // Ocean waves: two LFOs at slightly different rates → natural non-uniform rhythm
+      const src=makeNoise(ctx,6);
+      const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=750;
+      const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=90;
+      const waveMix=ctx.createGain();waveMix.gain.value=0.42;
+      // Primary wave ~7s period
+      const lfo1=ctx.createOscillator();lfo1.type='sine';lfo1.frequency.value=0.14;
+      const lg1=ctx.createGain();lg1.gain.value=0.35;
+      lfo1.connect(lg1);lg1.connect(waveMix.gain);
+      // Secondary wave ~5s period (interference creates natural variation)
+      const lfo2=ctx.createOscillator();lfo2.type='sine';lfo2.frequency.value=0.2;
+      const lg2=ctx.createGain();lg2.gain.value=0.18;
+      lfo2.connect(lg2);lg2.connect(waveMix.gain);
+      // Foam hiss layer (high freq, follows wave rhythm)
+      const foam=makeNoise(ctx,4);
+      const foamF=ctx.createBiquadFilter();foamF.type='highpass';foamF.frequency.value=2800;
+      const foamG=ctx.createGain();foamG.gain.value=0.08;
+      const foamLfo=ctx.createOscillator();foamLfo.type='sine';foamLfo.frequency.value=0.14;
+      const foamLG=ctx.createGain();foamLG.gain.value=0.07;
+      foamLfo.connect(foamLG);foamLG.connect(foamG.gain);
+      foam.connect(foamF);foamF.connect(foamG);foamG.connect(masterGain);
+      foam.start();foamLfo.start();
+      src.connect(hp);hp.connect(lp);lp.connect(waveMix);waveMix.connect(masterGain);
+      src.start();lfo1.start();lfo2.start();
+      audioNodes.src=src;audioNodes.src2=foam;audioNodes.lfo=lfo1;audioNodes.lfo2=lfo2;
+
+    } else if(type==='birds'){
+      // Calm birds: variety of natural chirp patterns, sparse (2-6s gaps)
+      function chirpNote(freq,dur,vol){
+        try{
+          const c=getAudioCtx();
+          const o=c.createOscillator();o.type='sine';
+          const g=c.createGain();
+          o.frequency.setValueAtTime(freq,c.currentTime);
+          g.gain.setValueAtTime(0,c.currentTime);
+          g.gain.linearRampToValueAtTime(soundVol*vol,c.currentTime+0.025);
+          g.gain.setValueAtTime(soundVol*vol,c.currentTime+dur*0.6);
+          g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+          o.connect(g);g.connect(c.destination);
+          o.start();o.stop(c.currentTime+dur+0.01);
+        }catch(e){}
+      }
+      function chirpGlide(f1,f2,dur,vol){
+        try{
+          const c=getAudioCtx();
+          const o=c.createOscillator();o.type='sine';
+          const g=c.createGain();
+          o.frequency.setValueAtTime(f1,c.currentTime);
+          o.frequency.exponentialRampToValueAtTime(f2,c.currentTime+dur);
+          g.gain.setValueAtTime(0,c.currentTime);
+          g.gain.linearRampToValueAtTime(soundVol*vol,c.currentTime+0.02);
+          g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+          o.connect(g);g.connect(c.destination);
+          o.start();o.stop(c.currentTime+dur+0.01);
+        }catch(e){}
+      }
+      function doChirp(){
+        const type=Math.floor(Math.random()*4);
+        if(type===0){
+          // Single ascending glide
+          chirpGlide(2200+Math.random()*300,3000+Math.random()*400,0.14,0.11);
+        } else if(type===1){
+          // Two-note call
+          const f=2600+Math.random()*400;
+          chirpNote(f,0.12,0.1);
+          setTimeout(()=>chirpNote(f*0.82,0.16,0.09),220+Math.random()*80);
+        } else if(type===2){
+          // Rapid trill (3-4 notes)
+          const base=2800+Math.random()*500;
+          for(let i=0;i<3+Math.floor(Math.random()*2);i++){
+            setTimeout(()=>chirpNote(base+(i%2)*180,0.07,0.08),i*90);
+          }
+        } else {
+          // Soft single long note
+          chirpGlide(2000+Math.random()*200,2400+Math.random()*200,0.22,0.09);
+        }
+        // Occasional second bird shortly after
+        if(Math.random()<0.28){
+          setTimeout(()=>{
+            if(!soundOn)return;
+            chirpGlide(3100+Math.random()*400,2700+Math.random()*300,0.13,0.08);
+          },500+Math.random()*1000);
+        }
+        audioNodes.timer=setTimeout(scheduleBirds,2200+Math.random()*4500);
+      }
+      function scheduleBirds(){if(!soundOn)return;doChirp();}
+      scheduleBirds();
 
     } else if(type==='fire'){
-      // Fire base = very low-pass noise for warmth/crackle bed
-      const src=makeNoise(ctx,3);
-      const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=200;
-      const gBase=ctx.createGain();gBase.gain.value=0.6;
-      src.connect(lp);lp.connect(gBase);gBase.connect(masterGain);
-      src.start();audioNodes.src=src;
-      // Random sharp pops for crackle
-      function crackle(){
+      // Fire: three layers — deep low rumble + mid hiss + sharp wood pops
+      // Layer 1: deep warmth (burning wood base)
+      const base=makeNoise(ctx,4);
+      const lpBase=ctx.createBiquadFilter();lpBase.type='lowpass';lpBase.frequency.value=160;
+      const gBase=ctx.createGain();gBase.gain.value=0.5;
+      // Slow amplitude flicker (fire breathing)
+      const flicker=ctx.createOscillator();flicker.type='sine';flicker.frequency.value=0.4;
+      const flickG=ctx.createGain();flickG.gain.value=0.18;
+      flicker.connect(flickG);flickG.connect(gBase.gain);
+      base.connect(lpBase);lpBase.connect(gBase);gBase.connect(masterGain);
+      base.start();flicker.start();
+      // Layer 2: mid crackling hiss
+      const mid=makeNoise(ctx,3);
+      const bpMid=ctx.createBiquadFilter();bpMid.type='bandpass';bpMid.frequency.value=1100;bpMid.Q.value=0.6;
+      const gMid=ctx.createGain();gMid.gain.value=0.22;
+      mid.connect(bpMid);bpMid.connect(gMid);gMid.connect(masterGain);
+      mid.start();
+      audioNodes.src=base;audioNodes.src2=mid;audioNodes.lfo=flicker;
+      // Layer 3: sharp irregular wood pops
+      function firePop(){
         if(!soundOn||!masterGain)return;
         try{
           const c=getAudioCtx();
-          const popLen=Math.floor(c.sampleRate*(0.02+Math.random()*0.04));
+          const popLen=Math.floor(c.sampleRate*(0.012+Math.random()*0.03));
           const pb=c.createBuffer(1,popLen,c.sampleRate);
-          const pd=pb.getChannelData(0);for(let i=0;i<popLen;i++)pd[i]=Math.random()*2-1;
+          const pd=pb.getChannelData(0);
+          for(let i=0;i<popLen;i++)pd[i]=Math.random()*2-1;
+          const lpPop=c.createBiquadFilter();lpPop.type='lowpass';lpPop.frequency.value=2500;
           const ps=c.createBufferSource();ps.buffer=pb;
           const pg=c.createGain();
-          pg.gain.setValueAtTime(soundVol*(0.3+Math.random()*0.4),c.currentTime);
-          pg.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.05);
-          ps.connect(pg);pg.connect(c.destination);ps.start();
+          const popVol=soundVol*(0.35+Math.random()*0.45);
+          pg.gain.setValueAtTime(popVol,c.currentTime);
+          pg.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.045);
+          ps.connect(lpPop);lpPop.connect(pg);pg.connect(c.destination);
+          ps.start();
         }catch(e){}
-        audioNodes.timer=setTimeout(crackle,100+Math.random()*600);
+        audioNodes.timer=setTimeout(firePop,60+Math.random()*350);
       }
-      crackle();
+      firePop();
     }
   }catch(e){console.warn('Audio error',e)}
 }
@@ -1532,27 +1627,33 @@ const HUE_PALETTES=[
   ['#6a8060','#5a7050','#7a9070','#4a6040'],
   ['#80706a','#706050','#90807a','#60504a'],
 ];
-let hueState={round:1,done:0,locked:false};
+let hueState={round:1,done:0,locked:false,currentTarget:null};
+let hueDrag={active:false,clone:null,color:null,swatch:null};
 
 function startHue(){
   useRound('hue');
-  hueState.round=1;hueState.done=0;
+  hueState={round:1,done:0,locked:false,currentTarget:null};
   show('screenHue');
-  document.getElementById('hueRound').textContent=`Round ${hueState.round} · ${HUE_ROUNDS} to match`;
+  document.getElementById('hueRound').textContent=`Round 1 · ${HUE_ROUNDS} to match`;
   buildHueRound();
 }
 
 function buildHueRound(){
   hueState.locked=false;
-  // Pick palette
   const palette=HUE_PALETTES[hueState.done%HUE_PALETTES.length];
   const target=palette[0];
-  // As difficulty increases, options get closer
-  const difficulty=Math.min(hueState.done/HUE_ROUNDS,0.8);
-  // Build options: target + 3 decoys
-  const opts=shuffle([target,...palette.slice(1)]);
-  document.getElementById('hueTarget').style.background=target;
-  // Dots
+  hueState.currentTarget=target;
+
+  // Target bar
+  document.getElementById('hueTargetBar').style.background=target;
+
+  // Reset drop zone
+  const dz=document.getElementById('hueDropZone');
+  dz.style.background='';
+  dz.classList.remove('wrong','hover','correct-fill');
+  document.getElementById('hueDropLabel').style.opacity='1';
+
+  // Progress dots
   const scoreRow=document.getElementById('hueScoreRow');
   scoreRow.innerHTML='';
   for(let i=0;i<HUE_ROUNDS;i++){
@@ -1560,35 +1661,84 @@ function buildHueRound(){
     d.className='hue-dot'+(i<hueState.done?' done':'');
     scoreRow.appendChild(d);
   }
-  document.getElementById('hueLabel').textContent='Tap the matching colour';
-  // Options
-  const optEl=document.getElementById('hueOptions');
-  optEl.innerHTML='';
+
+  // Swatches
+  const swatchEl=document.getElementById('hueSwatches');
+  swatchEl.innerHTML='';
+  const opts=shuffle([target,...palette.slice(1)]);
   opts.forEach(color=>{
     const el=document.createElement('div');
-    el.className='hue-opt';
+    el.className='hue-swatch';
     el.style.background=color;
-    el.onclick=()=>onHueTap(color,target,el,opts,target);
-    optEl.appendChild(el);
+    el.dataset.color=color;
+    el.addEventListener('touchstart',e=>onHueSwatchTouchStart(e,color,el),{passive:false});
+    swatchEl.appendChild(el);
   });
 }
 
-function onHueTap(chosen,target,el,allOpts,targetColor){
+function onHueSwatchTouchStart(e,color,swatchEl){
   if(hueState.locked)return;
-  if(chosen===target){
+  e.preventDefault();
+  const touch=e.touches[0];
+  const rect=swatchEl.getBoundingClientRect();
+
+  const clone=document.createElement('div');
+  clone.className='hue-drag-clone';
+  clone.style.cssText=`background:${color};left:${rect.left}px;top:${rect.top}px;`;
+  document.body.appendChild(clone);
+
+  hueDrag={active:true,clone,color,swatch:swatchEl};
+  swatchEl.style.opacity='0.22';
+  haptic('light');
+
+  document.addEventListener('touchmove',onHueTouchMove,{passive:false});
+  document.addEventListener('touchend',onHueTouchEnd,{passive:false});
+}
+
+function onHueTouchMove(e){
+  if(!hueDrag.active)return;
+  e.preventDefault();
+  const t=e.touches[0];
+  hueDrag.clone.style.left=(t.clientX-30)+'px';
+  hueDrag.clone.style.top=(t.clientY-30)+'px';
+  const dz=document.getElementById('hueDropZone');
+  const r=dz.getBoundingClientRect();
+  const over=t.clientX>=r.left&&t.clientX<=r.right&&t.clientY>=r.top&&t.clientY<=r.bottom;
+  dz.classList.toggle('hover',over);
+}
+
+function onHueTouchEnd(e){
+  if(!hueDrag.active)return;
+  document.removeEventListener('touchmove',onHueTouchMove);
+  document.removeEventListener('touchend',onHueTouchEnd);
+  const t=e.changedTouches[0];
+  const dz=document.getElementById('hueDropZone');
+  const r=dz.getBoundingClientRect();
+  const dropped=t.clientX>=r.left&&t.clientX<=r.right&&t.clientY>=r.top&&t.clientY<=r.bottom;
+  dz.classList.remove('hover');
+  hueDrag.clone.remove();
+  if(hueDrag.swatch)hueDrag.swatch.style.opacity='1';
+  const color=hueDrag.color;
+  hueDrag={active:false,clone:null,color:null,swatch:null};
+
+  if(!dropped)return;
+
+  if(color===hueState.currentTarget){
     hueState.locked=true;
-    el.classList.add('correct');
+    dz.style.background=color;
+    dz.classList.add('correct-fill');
+    document.getElementById('hueDropLabel').style.opacity='0';
     haptic('success');
     hueState.done++;
     if(hueState.done>=HUE_ROUNDS){
-      setTimeout(()=>onHueRoundComplete(),600);
+      setTimeout(()=>onHueRoundComplete(),750);
     } else {
-      setTimeout(()=>buildHueRound(),700);
+      setTimeout(()=>buildHueRound(),800);
     }
   } else {
-    el.classList.add('wrong');
-    haptic('light');
-    setTimeout(()=>el.classList.remove('wrong'),400);
+    dz.classList.add('wrong');
+    haptic('medium');
+    setTimeout(()=>dz.classList.remove('wrong'),400);
   }
 }
 
