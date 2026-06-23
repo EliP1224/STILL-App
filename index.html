@@ -398,6 +398,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:52px 2
   <div style="display:flex;flex-direction:column;align-items:center;padding:24px 0 8px">
     <div class="breathe-circle" id="breatheCircle"></div>
     <div class="breathe-phase" id="breathePhase"></div>
+    <div style="font-size:10px;letter-spacing:.12em;color:rgba(196,164,107,0.55);margin-bottom:6px;text-align:center" id="breatheCycles"></div>
+    <div style="font-size:9px;letter-spacing:.14em;color:rgba(196,164,107,0.4);margin-bottom:16px;text-align:center" id="breathePtsHint"></div>
     <button class="breathe-start-btn" id="breatheStartBtn" onclick="toggleBreathe()">Begin</button>
   </div>
 </div>
@@ -466,7 +468,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:52px 2
   </div>
   <div class="game-bottom">
     <div class="game-util-row">
-      <button class="util-pill" onclick="openBreathe()">Breathe</button>
+      <button class="util-pill" onclick="openBreathe()">Breathe · +10 ✦</button>
       <button class="util-pill" onclick="openSoundPicker()">Sound</button>
     </div>
   </div>
@@ -496,7 +498,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:52px 2
   </div>
   <div class="game-bottom">
     <div class="game-util-row">
-      <button class="util-pill" onclick="openBreathe()">Breathe</button>
+      <button class="util-pill" onclick="openBreathe()">Breathe · +10 ✦</button>
       <button class="util-pill" onclick="openSoundPicker()">Sound</button>
     </div>
   </div>
@@ -532,7 +534,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:52px 2
   </div>
   <div class="game-bottom">
     <div class="game-util-row">
-      <button class="util-pill" onclick="openBreathe()">Breathe</button>
+      <button class="util-pill" onclick="openBreathe()">Breathe · +10 ✦</button>
       <button class="util-pill" onclick="openSoundPicker()">Sound</button>
     </div>
   </div>
@@ -562,7 +564,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:52px 2
   </div>
   <div class="game-bottom">
     <div class="game-util-row">
-      <button class="util-pill" onclick="openBreathe()">Breathe</button>
+      <button class="util-pill" onclick="openBreathe()">Breathe · +10 ✦</button>
       <button class="util-pill" onclick="openSoundPicker()">Sound</button>
     </div>
   </div>
@@ -1203,23 +1205,65 @@ function onVolumeChange(v){
 // ═══════════════════════════════════════
 //  BREATHE
 // ═══════════════════════════════════════
-let breatheInterval=null,breatheActive=false;
+const BREATHE_PTS=10;
+const BREATHE_COOLDOWN_MS=10*60*1000; // 10 minutes
+const BREATHE_MIN_CYCLES=2; // must complete 2 full cycles to earn
+let breatheInterval=null,breatheActive=false,breatheCycleCount=0;
+
+function getBreatheNextPts(){
+  const last=Number(localStorage.getItem('still_breathe_pts_ts')||0);
+  const diff=Date.now()-last;
+  return diff>=BREATHE_COOLDOWN_MS?0:Math.ceil((BREATHE_COOLDOWN_MS-diff)/60000);
+}
+
+function updateBreatheUI(){
+  const cycles=breatheCycleCount;
+  const minsLeft=getBreatheNextPts();
+  document.getElementById('breatheCycles').textContent=
+    breatheActive&&cycles>0?`${cycles} cycle${cycles>1?'s':''}  completed`:'';
+  if(!breatheActive){
+    document.getElementById('breathePtsHint').textContent=
+      minsLeft===0?'✦ +10 pts · Ready to earn':'✦ Next points in '+minsLeft+' min';
+  } else {
+    document.getElementById('breathePtsHint').textContent=
+      minsLeft===0?'✦ Complete '+BREATHE_MIN_CYCLES+' cycles to earn +10 pts':'✦ Just breathe — you\'re good';
+  }
+}
+
 function openBreathe(){
+  breatheCycleCount=0;
   document.getElementById('breathePhase').textContent='';
   document.getElementById('breatheStartBtn').textContent='Begin';
   breatheActive=false;clearInterval(breatheInterval);
   document.getElementById('breatheCircle').className='breathe-circle';
+  updateBreatheUI();
   document.getElementById('breatheOverlay').classList.add('active');
   requestAnimationFrame(()=>document.getElementById('breatheSheet').classList.add('open'));
 }
+
 function closeBreathe(){
   document.getElementById('breatheSheet').classList.remove('open');
   setTimeout(()=>document.getElementById('breatheOverlay').classList.remove('active'),300);
-  breatheActive=false;clearInterval(breatheInterval);
+  // Award points if earned
+  if(breatheCycleCount>=BREATHE_MIN_CYCLES&&getBreatheNextPts()===0){
+    localStorage.setItem('still_breathe_pts_ts',Date.now());
+    const earned=addPoints(BREATHE_PTS,'breathe');
+    setTimeout(()=>showToast(`+${BREATHE_PTS} Still Points · Breathe session complete`),350);
+  }
+  breatheActive=false;clearInterval(breatheInterval);breatheCycleCount=0;
 }
+
 function toggleBreathe(){
-  if(breatheActive){breatheActive=false;clearInterval(breatheInterval);document.getElementById('breatheStartBtn').textContent='Begin';document.getElementById('breathePhase').textContent='';document.getElementById('breatheCircle').className='breathe-circle';return;}
-  breatheActive=true;document.getElementById('breatheStartBtn').textContent='Stop';
+  if(breatheActive){
+    breatheActive=false;clearInterval(breatheInterval);
+    document.getElementById('breatheStartBtn').textContent='Begin';
+    document.getElementById('breathePhase').textContent='';
+    document.getElementById('breatheCircle').className='breathe-circle';
+    updateBreatheUI();
+    return;
+  }
+  breatheActive=true;breatheCycleCount=0;
+  document.getElementById('breatheStartBtn').textContent='Stop';
   const phases=['Inhale','Hold','Exhale','Rest'];
   const dur=[4000,4000,4000,2000];
   let pi=0;
@@ -1229,8 +1273,11 @@ function toggleBreathe(){
     const c=document.getElementById('breatheCircle');
     c.className='breathe-circle'+(phases[pi]==='Inhale'?' inhale':phases[pi]==='Exhale'?' exhale':'');
     haptic('light');
+    // Count a full cycle each time we complete Rest (index 3)
+    if(pi===3){breatheCycleCount++;updateBreatheUI();}
     breatheInterval=setTimeout(()=>{pi=(pi+1)%phases.length;runPhase();},dur[pi]);
   }
+  updateBreatheUI();
   runPhase();
 }
 
