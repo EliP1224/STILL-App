@@ -62,9 +62,9 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:52px 2
 
 /* ── GAME SCREEN SHARED ── */
 .game-nav{display:flex;align-items:center;justify-content:space-between;padding:52px 22px 0;flex-shrink:0}
-.game-title-row{text-align:center;padding:10px 0 0;flex-shrink:0}
-.game-title{font-size:28px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,0.75);font-weight:200;line-height:1.1}
-.game-round{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(196,164,107,0.6);margin-top:5px}
+.game-title-row{text-align:center;padding:32px 0 4px;flex-shrink:0}
+.game-title{font-size:30px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,0.92);font-weight:500;line-height:1.1}
+.game-round{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(196,164,107,0.8);margin-top:7px;font-weight:400}
 .game-area{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0 16px}
 .game-bottom{padding:12px 22px calc(28px + env(safe-area-inset-bottom));flex-shrink:0}
 .game-util-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -242,15 +242,19 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:52px 2
 .back-btn svg{opacity:.6}
 
 /* ── TUTORIAL OVERLAY ── */
-.tutorial-overlay{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:calc(120px + env(safe-area-inset-bottom));pointer-events:none;opacity:0;transition:opacity .4s}
+.tutorial-overlay{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;pointer-events:none;opacity:0;transition:opacity .5s;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .tutorial-overlay.show{opacity:1;pointer-events:auto}
-.tutorial-bubble{background:rgba(14,14,14,0.92);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:0.5px solid rgba(196,164,107,0.3);border-radius:20px;padding:18px 22px;max-width:300px;text-align:center;position:relative}
-.tutorial-step{font-size:8px;letter-spacing:.25em;text-transform:uppercase;color:rgba(196,164,107,0.6);margin-bottom:6px}
-.tutorial-msg{font-size:14px;font-weight:200;color:var(--text);line-height:1.55;letter-spacing:.02em;margin-bottom:14px}
-.tutorial-hint{font-size:9px;color:var(--muted);letter-spacing:.08em}
-.tutorial-skip{position:absolute;top:10px;right:12px;font-size:9px;color:rgba(255,255,255,0.2);cursor:pointer;letter-spacing:.08em;text-transform:uppercase}
-.tutorial-arrow{font-size:28px;margin-bottom:12px;animation:tutBounce 1.2s ease infinite}
-@keyframes tutBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.tutorial-bubble{background:rgba(12,12,12,0.94);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:0.5px solid rgba(196,164,107,0.3);border-radius:24px;padding:32px 28px 24px;max-width:310px;width:100%;text-align:center;position:relative}
+.tutorial-icon{font-size:38px;margin-bottom:14px;display:block}
+.tutorial-step{font-size:8px;letter-spacing:.28em;text-transform:uppercase;color:rgba(196,164,107,0.55);margin-bottom:10px}
+.tutorial-msg{font-size:17px;font-weight:200;color:var(--text);line-height:1.55;letter-spacing:.01em;margin-bottom:6px}
+.tutorial-hint{font-size:11px;color:var(--muted);letter-spacing:.04em;line-height:1.5;margin-bottom:22px}
+.tutorial-next{width:100%;padding:14px;border-radius:50px;background:var(--gold);color:#0a0a0a;font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;border:none;cursor:pointer;font-family:inherit;transition:opacity .2s}
+.tutorial-next:active{opacity:.75}
+.tutorial-skip{position:absolute;top:12px;right:16px;font-size:9px;color:rgba(255,255,255,0.2);cursor:pointer;letter-spacing:.08em;text-transform:uppercase}
+.tut-dots{display:flex;justify-content:center;gap:6px;margin-bottom:20px}
+.tut-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.12);transition:background .3s}
+.tut-dot.active{background:var(--gold)}
 </style>
 </head>
 <body>
@@ -266,10 +270,12 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:52px 2
 <div class="tutorial-overlay" id="tutorialOverlay">
   <div class="tutorial-bubble">
     <div class="tutorial-skip" onclick="skipTutorial()">Skip</div>
-    <div class="tutorial-arrow" id="tutArrow">👆</div>
-    <div class="tutorial-step" id="tutStep">Step 1 of 3</div>
-    <div class="tutorial-msg" id="tutMsg">Tap any card to flip it over.</div>
-    <div class="tutorial-hint" id="tutHint">Find pairs to clear the board</div>
+    <div class="tut-dots" id="tutDots"></div>
+    <span class="tutorial-icon" id="tutIcon">✦</span>
+    <div class="tutorial-step" id="tutStep">1 of 4</div>
+    <div class="tutorial-msg" id="tutMsg">Welcome to STILL.</div>
+    <div class="tutorial-hint" id="tutHint">A quiet space for focus and stillness.</div>
+    <button class="tutorial-next" id="tutNextBtn" onclick="advanceTutorial()">Next</button>
   </div>
 </div>
 
@@ -1001,56 +1007,90 @@ function toggleSoundOnOff(){
   if(soundOn)playSound(currentSound);else stopAllSounds();
   renderSoundGrid();
 }
-function stopAllSounds(){Object.values(audioNodes).forEach(n=>{try{n.stop?n.stop():n.disconnect()}catch(e){}});audioNodes={};}
+let masterGain=null;
+function stopAllSounds(){
+  if(audioNodes.timer){clearTimeout(audioNodes.timer);audioNodes.timer=null;}
+  Object.values(audioNodes).forEach(n=>{try{n.stop?n.stop():n.disconnect()}catch(e){}});
+  audioNodes={};
+  masterGain=null;
+}
+function makeNoise(ctx,seconds){
+  const sr=ctx.sampleRate;
+  const buf=ctx.createBuffer(2,sr*seconds,sr);
+  for(let c=0;c<2;c++){const d=buf.getChannelData(c);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+  const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;return src;
+}
 function playSound(type){
   stopAllSounds();
   if(!soundOn)return;
   try{
     const ctx=getAudioCtx();
-    const gain=ctx.createGain();
-    gain.gain.setValueAtTime(soundVol*0.3,ctx.currentTime);
-    gain.connect(ctx.destination);
+    if(ctx.state==='suspended')ctx.resume();
+    masterGain=ctx.createGain();
+    masterGain.gain.setValueAtTime(soundVol,ctx.currentTime);
+    masterGain.connect(ctx.destination);
+    audioNodes.master=masterGain;
+
     if(type==='rain'){
-      const buf=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
-      const d=buf.getChannelData(0);
-      for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.4;
-      const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;
-      const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=2000;f.Q.value=0.5;
-      src.connect(f);f.connect(gain);src.start();
-      audioNodes.src=src;
-    } else if(type==='ocean'){
-      const buf=ctx.createBuffer(1,ctx.sampleRate*4,ctx.sampleRate);
-      const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
-      const n=ctx.createBufferSource();n.buffer=buf;n.loop=true;
-      const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=800;
-      n.connect(f);f.connect(gain);n.start();audioNodes.src=n;
+      // Rain = two noise layers: high-freq hiss (rain on surface) + mid rumble
+      const src=makeNoise(ctx,3);
+      const hiss=ctx.createBiquadFilter();hiss.type='highpass';hiss.frequency.value=3500;
+      const mid=ctx.createBiquadFilter();mid.type='bandpass';mid.frequency.value=900;mid.Q.value=0.6;
+      const gH=ctx.createGain();gH.gain.value=0.55;
+      const gM=ctx.createGain();gM.gain.value=0.45;
+      src.connect(hiss);hiss.connect(gH);gH.connect(masterGain);
+      src.connect(mid);mid.connect(gM);gM.connect(masterGain);
+      src.start();audioNodes.src=src;
+
     } else if(type==='wind'){
-      const buf=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
-      const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1);
-      const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;
-      const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=400;f.Q.value=0.3;
-      src.connect(f);f.connect(gain);src.start();audioNodes.src=src;
+      // Wind = bandpass noise with slow LFO creating gust swell
+      const src=makeNoise(ctx,4);
+      const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=500;bp.Q.value=0.4;
+      const ampEnv=ctx.createGain();ampEnv.gain.value=0.4;
+      // LFO for gusts
+      const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=0.12;
+      const lfoG=ctx.createGain();lfoG.gain.value=0.35;
+      lfo.connect(lfoG);lfoG.connect(ampEnv.gain);
+      src.connect(bp);bp.connect(ampEnv);ampEnv.connect(masterGain);
+      src.start();lfo.start();
+      audioNodes.src=src;audioNodes.lfo=lfo;
+
+    } else if(type==='ocean'){
+      // Ocean = low-pass noise with slow wave LFO (surge rhythm)
+      const src=makeNoise(ctx,5);
+      const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=650;
+      const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=80;
+      const ampEnv=ctx.createGain();ampEnv.gain.value=0.5;
+      // Wave LFO ~0.1Hz (one wave every ~10s)
+      const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=0.1;
+      const lfoG=ctx.createGain();lfoG.gain.value=0.4;
+      lfo.connect(lfoG);lfoG.connect(ampEnv.gain);
+      src.connect(hp);hp.connect(lp);lp.connect(ampEnv);ampEnv.connect(masterGain);
+      src.start();lfo.start();
+      audioNodes.src=src;audioNodes.lfo=lfo;
+
     } else if(type==='fire'){
-      // Crackling fire: low-freq rumble + periodic sharp crackle bursts
-      const buf=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
-      const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1);
-      const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;
-      const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=300;lp.Q.value=0.8;
-      src.connect(lp);lp.connect(gain);src.start();audioNodes.src=src;
-      // Periodic crackle pops
+      // Fire base = very low-pass noise for warmth/crackle bed
+      const src=makeNoise(ctx,3);
+      const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=200;
+      const gBase=ctx.createGain();gBase.gain.value=0.6;
+      src.connect(lp);lp.connect(gBase);gBase.connect(masterGain);
+      src.start();audioNodes.src=src;
+      // Random sharp pops for crackle
       function crackle(){
-        if(!soundOn)return;
+        if(!soundOn||!masterGain)return;
         try{
-          const c=getAudioCtx();const g2=c.createGain();
-          g2.gain.setValueAtTime(soundVol*0.25,c.currentTime);
-          g2.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.04);
-          g2.connect(c.destination);
-          const b2=c.createBuffer(1,Math.floor(c.sampleRate*0.04),c.sampleRate);
-          const d2=b2.getChannelData(0);for(let i=0;i<d2.length;i++)d2[i]=Math.random()*2-1;
-          const s2=c.createBufferSource();s2.buffer=b2;
-          s2.connect(g2);s2.start();
+          const c=getAudioCtx();
+          const popLen=Math.floor(c.sampleRate*(0.02+Math.random()*0.04));
+          const pb=c.createBuffer(1,popLen,c.sampleRate);
+          const pd=pb.getChannelData(0);for(let i=0;i<popLen;i++)pd[i]=Math.random()*2-1;
+          const ps=c.createBufferSource();ps.buffer=pb;
+          const pg=c.createGain();
+          pg.gain.setValueAtTime(soundVol*(0.3+Math.random()*0.4),c.currentTime);
+          pg.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.05);
+          ps.connect(pg);pg.connect(c.destination);ps.start();
         }catch(e){}
-        audioNodes.timer=setTimeout(crackle,200+Math.random()*900);
+        audioNodes.timer=setTimeout(crackle,100+Math.random()*600);
       }
       crackle();
     }
@@ -1061,6 +1101,8 @@ function onVolumeChange(v){
   document.getElementById('volLabel').textContent=v+'%';
   const sl=document.getElementById('volSlider');
   sl.style.background=`linear-gradient(to right,var(--gold) 0%,var(--gold) ${v}%,rgba(255,255,255,0.12) ${v}%,rgba(255,255,255,0.12) 100%)`;
+  // Live update — adjust master gain immediately
+  if(masterGain){try{masterGain.gain.setValueAtTime(soundVol,getAudioCtx().currentTime);}catch(e){}}
 }
 
 // ═══════════════════════════════════════
@@ -1263,8 +1305,6 @@ function onMemTap(idx){
   el.classList.add('flipped');
   haptic('light');
   memState.flipped.push(idx);
-  // Tutorial: first flip → advance to step 2
-  if(tutorialActive && tutorialStep===0) advanceTutorial();
   if(memState.flipped.length===2){
     memState.locked=true;
     setTimeout(()=>checkMemMatch(),500);
@@ -1277,8 +1317,6 @@ function checkMemMatch(){
   if(ca.sym===cb.sym){
     ca.matched=cb.matched=true;
     document.getElementById('mc'+a).classList.add('matched');
-    // Tutorial: first match → advance to step 3 then auto-dismiss
-    if(tutorialActive && tutorialStep===1){ advanceTutorial(); setTimeout(skipTutorial,2200); }
     document.getElementById('mc'+b).classList.add('matched');
     memState.matched++;
     document.getElementById('memMatches').textContent=memState.matched;
@@ -1712,25 +1750,68 @@ var tutorialStep=0;
 var tutorialActive=false;
 
 var TUTORIAL_STEPS=[
-  {arrow:'👆',step:'Step 1 of 3',msg:'Tap any card to flip it over.',hint:'Find pairs to clear the board'},
-  {arrow:'🔍',step:'Step 2 of 3',msg:'Now find the matching pair.',hint:'Tap another card'},
-  {arrow:'✦',step:'Step 3 of 3',msg:"You're still. Keep going.",hint:''}
+  {
+    icon:'✦',
+    step:'1 of 4',
+    msg:'Welcome to STILL.',
+    hint:'A quiet space designed to help you slow down, focus, and find stillness throughout your day.',
+    btn:'Next'
+  },
+  {
+    icon:'🎮',
+    step:'2 of 4',
+    msg:'4 mindful games.',
+    hint:'Memory Tiles, Finger Maze, Hue Match, and Tower Stack. Free users get 3 rounds per game — they refresh every 30 minutes.',
+    btn:'Next'
+  },
+  {
+    icon:'🎨',
+    step:'3 of 4',
+    msg:'Theme Drops.',
+    hint:'Every month we drop a new animated theme — gradient wallpapers you can own forever. Find them in the menu ☰ above.',
+    btn:'Next'
+  },
+  {
+    icon:'♾️',
+    step:'4 of 4',
+    msg:'Go deeper.',
+    hint:'Subscribe for unlimited rounds, earn STILL Points, and unlock exclusive content. Tap the ✦ coin anytime to explore.',
+    btn:"Let's Play"
+  }
 ];
 
 function showTutorial(){
   tutorialActive=true;
   tutorialStep=0;
+  renderTutorialDots();
   showTutorialStep(0);
   document.getElementById('tutorialOverlay').classList.add('show');
+}
+
+function renderTutorialDots(){
+  var dots=document.getElementById('tutDots');
+  dots.innerHTML='';
+  for(var i=0;i<TUTORIAL_STEPS.length;i++){
+    var d=document.createElement('div');
+    d.className='tut-dot'+(i===tutorialStep?' active':'');
+    dots.appendChild(d);
+  }
 }
 
 function showTutorialStep(n){
   var t=TUTORIAL_STEPS[n];
   if(!t)return;
-  document.getElementById('tutArrow').textContent=t.arrow;
-  document.getElementById('tutStep').textContent=t.step;
-  document.getElementById('tutMsg').textContent=t.msg;
-  document.getElementById('tutHint').textContent=t.hint;
+  var overlay=document.getElementById('tutorialOverlay');
+  overlay.style.opacity='0';
+  setTimeout(function(){
+    document.getElementById('tutIcon').textContent=t.icon;
+    document.getElementById('tutStep').textContent=t.step;
+    document.getElementById('tutMsg').textContent=t.msg;
+    document.getElementById('tutHint').textContent=t.hint;
+    document.getElementById('tutNextBtn').textContent=t.btn;
+    renderTutorialDots();
+    overlay.style.opacity='1';
+  },180);
 }
 
 function advanceTutorial(){
@@ -1745,7 +1826,9 @@ function advanceTutorial(){
 
 function skipTutorial(){
   tutorialActive=false;
-  document.getElementById('tutorialOverlay').classList.remove('show');
+  var overlay=document.getElementById('tutorialOverlay');
+  overlay.style.opacity='0';
+  setTimeout(function(){overlay.classList.remove('show');overlay.style.opacity='';},400);
   localStorage.setItem('still_tutorialDone','1');
 }
 
@@ -1759,12 +1842,9 @@ function init(){
   // Restore sound state
   const s=getStore();
   if(s.soundOn){soundOn=true;if(s.currentSound)currentSound=s.currentSound;playSound(currentSound);}
-  // First-launch tutorial: auto-drop into Memory Tiles
+  // First-launch: show interface tutorial over home screen
   if(!localStorage.getItem('still_tutorialDone')){
-    setTimeout(function(){
-      startMemory();
-      setTimeout(showTutorial,600);
-    },800);
+    setTimeout(showTutorial,900);
   }
 }
 
